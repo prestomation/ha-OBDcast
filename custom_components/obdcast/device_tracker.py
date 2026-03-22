@@ -1,29 +1,21 @@
-"""Device tracker platform for OBDcast integration.
-
-Creates a device_tracker entity for GPS location from the OBDcast device.
-This entity:
-- Shows the vehicle on Home Assistant's map
-- Supports zone detection (home/away/custom zones)
-- Updates in real-time as GPS data arrives
-
-The device tracker uses source_type=GPS and reports:
-- latitude/longitude from GPS data
-- GPS accuracy from fix quality
-- Additional attributes: altitude, heading, speed
-
-Entity naming:
-- Entity ID: device_tracker.obdcast_{device_id}
-- Name: {vehicle_name}
-"""
-
+"""Device tracker platform for OBDcast integration."""
 from __future__ import annotations
+
+from typing import Any
 
 from homeassistant.components.device_tracker import SourceType, TrackerEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import (
+    CONF_DEVICE_ID,
+    CONF_VEHICLE_NAME,
+    DOMAIN,
+)
+from .coordinator import OBDcastCoordinator
 
 
 async def async_setup_entry(
@@ -31,34 +23,29 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up OBDcast device tracker from a config entry.
+    """Set up OBDcast device tracker from a config entry."""
+    coordinator: OBDcastCoordinator = hass.data[DOMAIN][entry.entry_id]
+    device_id: str = entry.data[CONF_DEVICE_ID]
+    vehicle_name: str = entry.data[CONF_VEHICLE_NAME]
 
-    Creates the GPS-based device tracker entity.
-
-    Args:
-        hass: Home Assistant instance
-        entry: Config entry for this OBDcast device
-        async_add_entities: Callback to register entities
-    """
-    pass
+    async_add_entities([OBDcastDeviceTracker(coordinator, device_id, vehicle_name)])
 
 
-class OBDcastDeviceTracker(TrackerEntity):
-    """Device tracker entity for OBDcast GPS location.
+class OBDcastDeviceTracker(CoordinatorEntity[OBDcastCoordinator], TrackerEntity):
+    """Device tracker entity for OBDcast GPS location."""
 
-    Reports vehicle location based on GPS data from the OBDcast device.
-    Updates are push-based via the coordinator.
-    """
-
-    def __init__(self, coordinator, device_id: str, vehicle_name: str) -> None:
-        """Initialize the device tracker.
-
-        Args:
-            coordinator: OBDcastCoordinator instance
-            device_id: OBDcast device identifier
-            vehicle_name: Friendly name for the vehicle
-        """
-        pass
+    def __init__(
+        self,
+        coordinator: OBDcastCoordinator,
+        device_id: str,
+        vehicle_name: str,
+    ) -> None:
+        """Initialize the device tracker."""
+        super().__init__(coordinator)
+        self._device_id = device_id
+        self._vehicle_name = vehicle_name
+        self._attr_unique_id = f"{device_id}_tracker"
+        self._attr_name = vehicle_name
 
     @property
     def source_type(self) -> SourceType:
@@ -68,30 +55,55 @@ class OBDcastDeviceTracker(TrackerEntity):
     @property
     def latitude(self) -> float | None:
         """Return latitude from GPS data."""
-        pass
+        return self.coordinator.get_value("gps.lat")
 
     @property
     def longitude(self) -> float | None:
         """Return longitude from GPS data."""
-        pass
+        return self.coordinator.get_value("gps.lon")
 
     @property
     def location_accuracy(self) -> int:
-        """Return GPS accuracy in meters.
+        """Return GPS accuracy derived from HDOP.
 
-        Derived from GPS fix quality - higher quality = lower number.
+        HDOP * 5 gives a rough accuracy in meters.
+        Returns 0 (unknown) if no HDOP data.
         """
-        pass
+        hdop = self.coordinator.get_value("gps.hdop")
+        if hdop is None:
+            return 0
+        return int(float(hdop) * 5)
 
     @property
-    def extra_state_attributes(self):
-        """Return additional GPS attributes.
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return additional GPS attributes."""
+        attrs: dict[str, Any] = {}
+        coord = self.coordinator
 
-        Includes altitude, heading, speed, and satellites.
-        """
-        pass
+        alt = coord.get_value("gps.alt_m")
+        if alt is not None:
+            attrs["altitude"] = alt
+
+        heading = coord.get_value("gps.heading")
+        if heading is not None:
+            attrs["heading"] = heading
+
+        speed = coord.get_value("obd.speed")
+        if speed is not None:
+            attrs["speed"] = speed
+
+        hdop = coord.get_value("gps.hdop")
+        if hdop is not None:
+            attrs["gps_accuracy"] = self.location_accuracy
+
+        return attrs
 
     @property
-    def device_info(self):
+    def device_info(self) -> DeviceInfo:
         """Return device info for device registry."""
-        pass
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._device_id)},
+            name=self._vehicle_name,
+            manufacturer="Freematics",
+            model="ONE+ Model B",
+        )
