@@ -4,12 +4,11 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.sensor import (
-    SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -75,7 +74,10 @@ class OBDcastSensor(CoordinatorEntity[OBDcastCoordinator], SensorEntity):
         if device_class:
             self._attr_device_class = device_class
         if state_class:
-            self._attr_state_class = SensorStateClass.MEASUREMENT
+            try:
+                self._attr_state_class = SensorStateClass(state_class)
+            except ValueError:
+                self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
     def device_info(self) -> DeviceInfo:
