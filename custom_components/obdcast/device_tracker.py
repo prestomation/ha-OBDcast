@@ -72,7 +72,10 @@ class OBDcastDeviceTracker(CoordinatorEntity[OBDcastCoordinator], TrackerEntity)
         hdop = self.coordinator.get_value("gps.hdop")
         if hdop is None:
             return 0
-        return int(float(hdop) * 5)
+        try:
+            return int(float(hdop) * 5)
+        except (TypeError, ValueError):
+            return 0
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

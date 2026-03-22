@@ -7,7 +7,6 @@ from typing import Any
 from homeassistant.components import mqtt, webhook
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .const import (
     CONF_DEVICE_ID,

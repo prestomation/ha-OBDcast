@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -45,7 +45,7 @@ class OBDcastCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             payload: Parsed JSON payload from OBDcast device
         """
         _LOGGER.debug("OBDcast %s received telemetry: %s", self.device_id, payload)
-        self._last_update = datetime.utcnow()
+        self._last_update = datetime.now(timezone.utc)
         self.async_set_updated_data(payload)
 
     async def async_receive_raw(self, raw: str | bytes) -> None:
