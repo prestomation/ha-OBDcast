@@ -1,0 +1,51 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "OBDcast Setup",
+        "description": "Choose how your OBDcast device will send telemetry data to Home Assistant.",
+        "data": {
+          "transport": "Data Transport"
+        }
+      },
+      "mqtt": {
+        "title": "MQTT Configuration",
+        "description": "Configure MQTT transport for your OBDcast device. Requires HA MQTT integration to be set up.",
+        "data": {
+          "vehicle_name": "Vehicle Name",
+          "device_id": "Device ID",
+          "mqtt_topic_prefix": "MQTT Topic Prefix"
+        },
+        "data_description": {
+          "vehicle_name": "Friendly name for this vehicle (e.g. 'Tesla', 'Family Car')",
+          "device_id": "Must match the Device ID set in OBDcast firmware",
+          "mqtt_topic_prefix": "MQTT topic prefix (default: obdcast)"
+        }
+      },
+      "webhook": {
+        "title": "Webhook Configuration",
+        "description": "Configure webhook transport. A unique webhook URL will be generated for your device.",
+        "data": {
+          "vehicle_name": "Vehicle Name",
+          "device_id": "Device ID",
+          "webhook_hmac_secret": "HMAC Secret",
+          "webhook_hmac_enabled": "Require HMAC signature verification"
+        },
+        "data_description": {
+          "vehicle_name": "Friendly name for this vehicle (e.g. 'Tesla', 'Family Car')",
+          "device_id": "Must match the Device ID set in OBDcast firmware",
+          "webhook_hmac_secret": "Copy from WEBHOOK_HMAC_SECRET in your OBDcast firmware config.h. Leave blank to disable signature verification.",
+          "webhook_hmac_enabled": "When enabled, webhook requests without a valid HMAC-SHA256 signature will be rejected."
+        }
+      }
+    },
+    "error": {
+      "already_configured": "This device ID is already configured.",
+      "invalid_device_id": "Device ID cannot be empty.",
+      "invalid_vehicle_name": "Vehicle name cannot be empty."
+    },
+    "abort": {
+      "already_configured": "This device is already configured."
+    }
+  }
+}

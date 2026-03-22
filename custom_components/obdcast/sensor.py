@@ -1,35 +1,7 @@
-"""Sensor platform for OBDcast integration.
-
-Creates sensor entities for all telemetry data from the OBDcast device:
-
-OBD-II Sensors:
-- Speed (km/h)
-- RPM
-- Fuel Level (%)
-- Coolant Temperature (°C)
-- Engine Load (%)
-- Throttle Position (%)
-
-GPS Sensors:
-- Altitude (m)
-- GPS Speed (km/h)
-- Heading (°)
-- GPS Accuracy (fix quality)
-
-Device Sensors:
-- Battery Voltage (V)
-- Device Temperature (°C)
-- Acceleration (m/s²)
-
-All sensors use the coordinator for data updates. They don't poll
-independently - they subscribe to coordinator updates.
-
-Entity naming convention:
-- Entity ID: sensor.obdcast_{device_id}_{sensor_type}
-- Name: {vehicle_name} {Sensor Name}
-"""
-
+"""Sensor platform for OBDcast integration."""
 from __future__ import annotations
+
+from typing import Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -38,9 +10,17 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import (
+    CONF_DEVICE_ID,
+    CONF_VEHICLE_NAME,
+    DOMAIN,
+    SENSOR_DEFINITIONS,
+)
+from .coordinator import OBDcastCoordinator
 
 
 async def async_setup_entry(
@@ -48,46 +28,69 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up OBDcast sensors from a config entry.
+    """Set up OBDcast sensors from a config entry."""
+    coordinator: OBDcastCoordinator = hass.data[DOMAIN][entry.entry_id]
+    device_id: str = entry.data[CONF_DEVICE_ID]
+    vehicle_name: str = entry.data[CONF_VEHICLE_NAME]
 
-    Creates all sensor entities and registers them with Home Assistant.
-
-    Args:
-        hass: Home Assistant instance
-        entry: Config entry for this OBDcast device
-        async_add_entities: Callback to register entities
-    """
-    pass
+    entities = [
+        OBDcastSensor(coordinator, device_id, vehicle_name, definition)
+        for definition in SENSOR_DEFINITIONS
+    ]
+    async_add_entities(entities)
 
 
-class OBDcastSensor(SensorEntity):
-    """Base sensor entity for OBDcast telemetry.
+class OBDcastSensor(CoordinatorEntity[OBDcastCoordinator], SensorEntity):
+    """Sensor entity for OBDcast telemetry."""
 
-    All OBDcast sensors inherit from this base class which provides:
-    - Coordinator subscription
-    - Device info for registry
-    - Common property implementations
-    """
-
-    def __init__(self, coordinator, device_id: str, vehicle_name: str) -> None:
+    def __init__(
+        self,
+        coordinator: OBDcastCoordinator,
+        device_id: str,
+        vehicle_name: str,
+        definition: tuple,
+    ) -> None:
         """Initialize the sensor.
 
         Args:
             coordinator: OBDcastCoordinator instance
             device_id: OBDcast device identifier
             vehicle_name: Friendly name for the vehicle
+            definition: Tuple of (key, name, unit, device_class, state_class, icon)
         """
-        pass
+        super().__init__(coordinator)
+        key, name, unit, device_class, state_class, icon = definition
+
+        self._key_path = key
+        self._device_id = device_id
+        self._vehicle_name = vehicle_name
+
+        # Unique ID uses underscores: obdcast001_obd_speed
+        unique_key = key.replace(".", "_")
+        self._attr_unique_id = f"{device_id}_{unique_key}"
+        self._attr_name = f"{vehicle_name} - {name}"
+        self._attr_native_unit_of_measurement = unit
+        self._attr_icon = icon
+
+        if device_class:
+            try:
+                self._attr_device_class = SensorDeviceClass(device_class)
+            except ValueError:
+                pass
+        if state_class:
+            try:
+                self._attr_state_class = SensorStateClass(state_class)
+            except ValueError:
+                self._attr_state_class = SensorStateClass.MEASUREMENT
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=vehicle_name,
+            manufacturer="Freematics",
+            model="ONE+ Model B",
+        )
 
     @property
-    def device_info(self):
-        """Return device info for device registry.
-
-        Links this entity to the OBDcast device entry.
-        """
-        pass
-
-    @property
-    def native_value(self):
+    def native_value(self) -> Any:
         """Return the sensor value from coordinator data."""
-        pass
+        return self.coordinator.get_value(self._key_path)

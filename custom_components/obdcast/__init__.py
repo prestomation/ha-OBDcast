@@ -1,55 +1,114 @@
-"""OBDcast integration for Home Assistant.
-
-This is the main entry point for the OBDcast integration. It handles:
-- Integration setup and teardown via async_setup_entry/async_unload_entry
-- Platform forwarding to sensor, binary_sensor, and device_tracker
-- Coordinator initialization based on transport mode (MQTT or Webhook)
-- Webhook registration/deregistration for webhook transport
-- MQTT subscription setup for MQTT transport
-
-The integration follows Home Assistant's config entry pattern for
-UI-based configuration without YAML.
-"""
-
+"""OBDcast integration for Home Assistant."""
 from __future__ import annotations
 
+import hashlib
+import hmac as hmac_lib
+import json
+import logging
+from typing import Any
+
+from homeassistant.components import webhook
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, PLATFORMS
+from .const import (
+    CONF_DEVICE_ID,
+    CONF_MQTT_TOPIC_PREFIX,
+    CONF_TRANSPORT,
+    CONF_VEHICLE_NAME,
+    CONF_WEBHOOK_HMAC_ENABLED,
+    CONF_WEBHOOK_HMAC_SECRET,
+    CONF_WEBHOOK_ID,
+    DEFAULT_MQTT_TOPIC_PREFIX,
+    DOMAIN,
+    PLATFORMS,
+    TRANSPORT_MQTT,
+    TRANSPORT_WEBHOOK,
+)
+from .coordinator import OBDcastCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up OBDcast from a config entry.
+    """Set up OBDcast from a config entry."""
+    device_id: str = entry.data[CONF_DEVICE_ID]
+    vehicle_name: str = entry.data[CONF_VEHICLE_NAME]
+    transport: str = entry.data[CONF_TRANSPORT]
 
-    This function:
-    1. Creates the OBDcastCoordinator for this device
-    2. Registers webhook or MQTT subscription based on transport
-    3. Forwards setup to all entity platforms
+    coordinator = OBDcastCoordinator(hass, device_id, vehicle_name)
 
-    Args:
-        hass: Home Assistant instance
-        entry: Config entry for this OBDcast device
+    hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    Returns:
-        True if setup was successful
-    """
+    if transport == TRANSPORT_MQTT:
+        from homeassistant.components import mqtt  # noqa: PLC0415
+
+        topic_prefix = entry.data.get(CONF_MQTT_TOPIC_PREFIX, DEFAULT_MQTT_TOPIC_PREFIX)
+        topic = f"{topic_prefix}/{device_id}/telemetry"
+        _LOGGER.info("OBDcast %s subscribing to MQTT topic: %s", device_id, topic)
+
+        async def async_mqtt_message_received(msg: Any) -> None:
+            """Handle incoming MQTT message."""
+            await coordinator.async_receive_raw(msg.payload)
+
+        entry.async_on_unload(
+            await mqtt.async_subscribe(hass, topic, async_mqtt_message_received)
+        )
+
+    elif transport == TRANSPORT_WEBHOOK:
+        webhook_id: str = entry.data[CONF_WEBHOOK_ID]
+        hmac_enabled: bool = entry.data.get(CONF_WEBHOOK_HMAC_ENABLED, False)
+        hmac_secret: str = entry.data.get(CONF_WEBHOOK_HMAC_SECRET, "")
+        _LOGGER.info("OBDcast %s registering webhook: %s", device_id, webhook_id)
+
+        async def async_handle_webhook(
+            hass: HomeAssistant, webhook_id: str, request: Any
+        ) -> None:
+            """Handle incoming webhook POST."""
+            body = await request.read()
+
+            if hmac_enabled and hmac_secret:
+                sig_header = request.headers.get("X-OBDcast-Signature", "")
+                expected = hmac_lib.new(
+                    hmac_secret.encode(), body, hashlib.sha256
+                ).hexdigest()
+                if not hmac_lib.compare_digest(expected, sig_header):
+                    _LOGGER.warning(
+                        "OBDcast %s webhook signature mismatch — rejecting", device_id
+                    )
+                    return
+
+            try:
+                payload = json.loads(body)
+            except (json.JSONDecodeError, ValueError) as err:
+                _LOGGER.error("OBDcast %s webhook JSON parse error: %s", device_id, err)
+                return
+            if not isinstance(payload, dict):
+                _LOGGER.error("OBDcast %s webhook payload is not a JSON object", device_id)
+                return
+            coordinator.async_receive_data(payload)
+
+        webhook.async_register(
+            hass,
+            DOMAIN,
+            f"OBDcast {vehicle_name}",
+            webhook_id,
+            async_handle_webhook,
+        )
+
+        def _unregister_webhook() -> None:
+            webhook.async_unregister(hass, webhook_id)
+
+        entry.async_on_unload(_unregister_webhook)
+
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload an OBDcast config entry.
-
-    Cleans up:
-    - Webhook registration (if webhook transport)
-    - MQTT subscriptions (if MQTT transport)
-    - Coordinator and entity resources
-
-    Args:
-        hass: Home Assistant instance
-        entry: Config entry being unloaded
-
-    Returns:
-        True if unload was successful
-    """
-    return True
+    """Unload an OBDcast config entry."""
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if unload_ok:
+        hass.data[DOMAIN].pop(entry.entry_id, None)
+    return unload_ok
