@@ -1,6 +1,9 @@
 """OBDcast integration for Home Assistant."""
 from __future__ import annotations
 
+import hashlib
+import hmac as hmac_lib
+import json
 import logging
 from typing import Any
 
@@ -13,6 +16,8 @@ from .const import (
     CONF_MQTT_TOPIC_PREFIX,
     CONF_TRANSPORT,
     CONF_VEHICLE_NAME,
+    CONF_WEBHOOK_HMAC_ENABLED,
+    CONF_WEBHOOK_HMAC_SECRET,
     CONF_WEBHOOK_ID,
     DEFAULT_MQTT_TOPIC_PREFIX,
     DOMAIN,
@@ -53,21 +58,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     elif transport == TRANSPORT_WEBHOOK:
         webhook_id: str = entry.data[CONF_WEBHOOK_ID]
+        hmac_enabled: bool = entry.data.get(CONF_WEBHOOK_HMAC_ENABLED, False)
+        hmac_secret: str = entry.data.get(CONF_WEBHOOK_HMAC_SECRET, "")
         _LOGGER.info("OBDcast %s registering webhook: %s", device_id, webhook_id)
 
         async def async_handle_webhook(
             hass: HomeAssistant, webhook_id: str, request: Any
         ) -> None:
             """Handle incoming webhook POST."""
+            body = await request.read()
+
+            if hmac_enabled and hmac_secret:
+                sig_header = request.headers.get("X-OBDcast-Signature", "")
+                expected = hmac_lib.new(
+                    hmac_secret.encode(), body, hashlib.sha256
+                ).hexdigest()
+                if not hmac_lib.compare_digest(expected, sig_header):
+                    _LOGGER.warning(
+                        "OBDcast %s webhook signature mismatch — rejecting", device_id
+                    )
+                    return
+
             try:
-                payload = await request.json()
-            except Exception as err:  # pylint: disable=broad-except
-                _LOGGER.error("OBDcast %s webhook failed to parse JSON: %s", device_id, err)
+                payload = json.loads(body)
+            except (json.JSONDecodeError, ValueError) as err:
+                _LOGGER.error("OBDcast %s webhook JSON parse error: %s", device_id, err)
                 return
             if not isinstance(payload, dict):
                 _LOGGER.error("OBDcast %s webhook payload is not a JSON object", device_id)
                 return
-            await coordinator.async_receive_data(payload)
+            coordinator.async_receive_data(payload)
 
         webhook.async_register(
             hass,

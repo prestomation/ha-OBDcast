@@ -27,11 +27,15 @@
         "description": "Configure webhook transport. A unique webhook URL will be generated for your device.",
         "data": {
           "vehicle_name": "Vehicle Name",
-          "device_id": "Device ID"
+          "device_id": "Device ID",
+          "webhook_hmac_secret": "HMAC Secret",
+          "webhook_hmac_enabled": "Require HMAC signature verification"
         },
         "data_description": {
           "vehicle_name": "Friendly name for this vehicle (e.g. 'Tesla', 'Family Car')",
-          "device_id": "Must match the Device ID set in OBDcast firmware"
+          "device_id": "Must match the Device ID set in OBDcast firmware",
+          "webhook_hmac_secret": "Copy from WEBHOOK_HMAC_SECRET in your OBDcast firmware config.h. Leave blank to disable signature verification.",
+          "webhook_hmac_enabled": "When enabled, webhook requests without a valid HMAC-SHA256 signature will be rejected."
         }
       }
     },

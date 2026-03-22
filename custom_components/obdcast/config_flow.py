@@ -14,6 +14,8 @@ from .const import (
     CONF_MQTT_TOPIC_PREFIX,
     CONF_TRANSPORT,
     CONF_VEHICLE_NAME,
+    CONF_WEBHOOK_HMAC_ENABLED,
+    CONF_WEBHOOK_HMAC_SECRET,
     CONF_WEBHOOK_ID,
     DEFAULT_MQTT_TOPIC_PREFIX,
     DOMAIN,
@@ -41,6 +43,8 @@ STEP_WEBHOOK_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_VEHICLE_NAME): str,
         vol.Required(CONF_DEVICE_ID): str,
+        vol.Optional(CONF_WEBHOOK_HMAC_SECRET, default=""): str,
+        vol.Optional(CONF_WEBHOOK_HMAC_ENABLED, default=False): bool,
     }
 )
 
@@ -115,6 +119,12 @@ class OBDcastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             device_id = user_input[CONF_DEVICE_ID].strip()
             vehicle_name = user_input[CONF_VEHICLE_NAME].strip()
+            hmac_secret = user_input.get(CONF_WEBHOOK_HMAC_SECRET, "").strip()
+            hmac_enabled = user_input.get(CONF_WEBHOOK_HMAC_ENABLED, False)
+
+            # If a secret is provided, always enable HMAC verification
+            if hmac_secret:
+                hmac_enabled = True
 
             if not device_id:
                 errors[CONF_DEVICE_ID] = "invalid_device_id"
@@ -134,6 +144,8 @@ class OBDcastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_VEHICLE_NAME: vehicle_name,
                         CONF_DEVICE_ID: device_id,
                         CONF_WEBHOOK_ID: webhook_id,
+                        CONF_WEBHOOK_HMAC_SECRET: hmac_secret,
+                        CONF_WEBHOOK_HMAC_ENABLED: hmac_enabled,
                     },
                 )
 

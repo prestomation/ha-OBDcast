@@ -11,6 +11,8 @@ CONF_VEHICLE_NAME = "vehicle_name"
 CONF_TRANSPORT = "transport"
 CONF_MQTT_TOPIC_PREFIX = "mqtt_topic_prefix"
 CONF_WEBHOOK_ID = "webhook_id"
+CONF_WEBHOOK_HMAC_SECRET = "webhook_hmac_secret"
+CONF_WEBHOOK_HMAC_ENABLED = "webhook_hmac_enabled"
 
 # Transport modes
 TRANSPORT_MQTT = "mqtt"
