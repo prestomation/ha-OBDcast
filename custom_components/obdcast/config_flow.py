@@ -55,8 +55,6 @@ class OBDcastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         Presents the user with a choice between MQTT and Webhook transport.
         """
-        # TODO: Implement transport selection step
-        # TODO: Route to MQTT or Webhook config step based on selection
         pass
 
     async def async_step_mqtt(
@@ -69,9 +67,6 @@ class OBDcastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         - Vehicle name
         - MQTT topic prefix (optional)
         """
-        # TODO: Implement MQTT configuration form
-        # TODO: Validate device ID uniqueness
-        # TODO: Create config entry
         pass
 
     async def async_step_webhook(
@@ -85,8 +80,4 @@ class OBDcastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         Displays the generated webhook URL for firmware configuration.
         """
-        # TODO: Implement webhook configuration form
-        # TODO: Generate and display webhook URL
-        # TODO: Validate device ID uniqueness
-        # TODO: Create config entry
         pass

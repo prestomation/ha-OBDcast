@@ -34,10 +34,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     Returns:
         True if setup was successful
     """
-    # TODO: Initialize coordinator
-    # TODO: Set up transport (webhook or MQTT)
-    # TODO: Store coordinator in hass.data
-    # TODO: Forward to platforms
     return True
 
 
@@ -56,7 +52,4 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     Returns:
         True if unload was successful
     """
-    # TODO: Unregister webhook/MQTT
-    # TODO: Unload platforms
-    # TODO: Clean up hass.data
     return True

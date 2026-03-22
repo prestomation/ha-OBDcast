@@ -76,11 +76,6 @@ class OBDcastCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         Args:
             payload: JSON payload from OBDcast device
         """
-        # TODO: Parse and validate payload structure
-        # TODO: Store data in self.data
-        # TODO: Derive ignition state from battery voltage
-        # TODO: Update _last_update timestamp
-        # TODO: Call async_set_updated_data() to notify entities
         pass
 
     @property

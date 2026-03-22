@@ -41,9 +41,6 @@ async def async_setup_entry(
         entry: Config entry for this OBDcast device
         async_add_entities: Callback to register entities
     """
-    # TODO: Get coordinator from hass.data
-    # TODO: Create ignition binary sensor
-    # TODO: Call async_add_entities
     pass
 
 
@@ -62,9 +59,6 @@ class OBDcastIgnitionSensor(BinarySensorEntity):
             device_id: OBDcast device identifier
             vehicle_name: Friendly name for the vehicle
         """
-        # TODO: Store coordinator reference
-        # TODO: Set up entity attributes
-        # TODO: Configure unique_id
         pass
 
     @property
@@ -78,11 +72,9 @@ class OBDcastIgnitionSensor(BinarySensorEntity):
 
         Determined by battery voltage threshold in coordinator.
         """
-        # TODO: Return coordinator.ignition_on
         pass
 
     @property
     def device_info(self):
         """Return device info for device registry."""
-        # TODO: Return device info dict
         pass

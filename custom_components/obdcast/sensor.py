@@ -57,9 +57,6 @@ async def async_setup_entry(
         entry: Config entry for this OBDcast device
         async_add_entities: Callback to register entities
     """
-    # TODO: Get coordinator from hass.data
-    # TODO: Create sensor entities for all telemetry types
-    # TODO: Call async_add_entities with entity list
     pass
 
 
@@ -80,9 +77,6 @@ class OBDcastSensor(SensorEntity):
             device_id: OBDcast device identifier
             vehicle_name: Friendly name for the vehicle
         """
-        # TODO: Store coordinator reference
-        # TODO: Set up entity attributes
-        # TODO: Configure unique_id
         pass
 
     @property
@@ -91,27 +85,9 @@ class OBDcastSensor(SensorEntity):
 
         Links this entity to the OBDcast device entry.
         """
-        # TODO: Return device info dict
         pass
 
     @property
     def native_value(self):
         """Return the sensor value from coordinator data."""
-        # TODO: Extract value from coordinator.data
         pass
-
-
-# TODO: Implement specific sensor classes:
-# - OBDcastSpeedSensor
-# - OBDcastRPMSensor
-# - OBDcastFuelLevelSensor
-# - OBDcastCoolantTempSensor
-# - OBDcastEngineLoadSensor
-# - OBDcastThrottleSensor
-# - OBDcastBatteryVoltageSensor
-# - OBDcastAltitudeSensor
-# - OBDcastGPSSpeedSensor
-# - OBDcastHeadingSensor
-# - OBDcastGPSAccuracySensor
-# - OBDcastDeviceTempSensor
-# - OBDcastAccelerationSensor

@@ -40,9 +40,6 @@ async def async_setup_entry(
         entry: Config entry for this OBDcast device
         async_add_entities: Callback to register entities
     """
-    # TODO: Get coordinator from hass.data
-    # TODO: Create device tracker entity
-    # TODO: Call async_add_entities
     pass
 
 
@@ -61,9 +58,6 @@ class OBDcastDeviceTracker(TrackerEntity):
             device_id: OBDcast device identifier
             vehicle_name: Friendly name for the vehicle
         """
-        # TODO: Store coordinator reference
-        # TODO: Set up entity attributes
-        # TODO: Configure unique_id
         pass
 
     @property
@@ -74,13 +68,11 @@ class OBDcastDeviceTracker(TrackerEntity):
     @property
     def latitude(self) -> float | None:
         """Return latitude from GPS data."""
-        # TODO: Get from coordinator.data["gps"]["latitude"]
         pass
 
     @property
     def longitude(self) -> float | None:
         """Return longitude from GPS data."""
-        # TODO: Get from coordinator.data["gps"]["longitude"]
         pass
 
     @property
@@ -89,7 +81,6 @@ class OBDcastDeviceTracker(TrackerEntity):
 
         Derived from GPS fix quality - higher quality = lower number.
         """
-        # TODO: Calculate from gps.fix_quality
         pass
 
     @property
@@ -98,11 +89,9 @@ class OBDcastDeviceTracker(TrackerEntity):
 
         Includes altitude, heading, speed, and satellites.
         """
-        # TODO: Return dict with extra GPS data
         pass
 
     @property
     def device_info(self):
         """Return device info for device registry."""
-        # TODO: Return device info dict
         pass
