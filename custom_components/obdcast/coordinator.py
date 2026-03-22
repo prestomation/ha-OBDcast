@@ -53,7 +53,9 @@ class OBDcastCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         Args:
             hass: Home Assistant instance
             device_id: OBDcast device identifier
-            vehicle_name: Friendly name for the vehicle
+            vehicle_name: Vehicle name provided during config flow setup (e.g. "Tesla",
+                "Family Car"). Used as the HA device name and passed to all entities
+                for friendly name prefixing (e.g. "Tesla - Speed", "Tesla - Fuel Level").
         """
         super().__init__(
             hass,

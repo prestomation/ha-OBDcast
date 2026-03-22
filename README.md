@@ -43,43 +43,49 @@ Home Assistant custom integration for **OBDcast** vehicle telemetry. Receives re
 3. Search for **OBDcast**
 4. Follow the setup wizard:
    - Select transport mode (MQTT or Webhook)
+   - Enter a name for your vehicle (e.g. "Tesla", "Family Car", "Work Truck") — this becomes the HA device name and prefixes all entity names
    - Enter your OBDcast device ID (must match firmware configuration)
-   - Enter a friendly name for your vehicle
 5. Configure your OBDcast firmware to send data to HA:
    - **MQTT**: Point to your MQTT broker, use topic prefix `obdcast`
    - **Webhook**: Use the webhook URL shown during setup
 
 ## Entities
 
+All entities are named with your vehicle name as a prefix. For a vehicle named **"Tesla"**, you'll get entities like `Tesla - Speed` (`sensor.tesla_speed`), `Tesla - Fuel Level` (`sensor.tesla_fuel_level`), etc.
+
 ### Sensors
 
-| Entity | Description | Unit |
-|--------|-------------|------|
-| Speed | Vehicle speed from OBD-II | km/h |
-| RPM | Engine RPM | rpm |
-| Fuel Level | Fuel tank level | % |
-| Coolant Temperature | Engine coolant temp | °C |
-| Engine Load | Calculated engine load | % |
-| Throttle Position | Throttle pedal position | % |
-| Battery Voltage | 12V battery voltage | V |
-| Altitude | GPS altitude | m |
-| GPS Speed | Speed from GPS | km/h |
-| Heading | GPS heading/bearing | ° |
-| GPS Accuracy | GPS fix quality | — |
-| Device Temperature | OBDcast internal temp | °C |
-| Acceleration | Accelerometer magnitude | m/s² |
+| Entity (example: Tesla) | Description | Unit |
+|-------------------------|-------------|------|
+| Tesla - Speed | Vehicle speed from OBD-II | km/h |
+| Tesla - RPM | Engine RPM | rpm |
+| Tesla - Fuel Level | Fuel tank level | % |
+| Tesla - Coolant Temperature | Engine coolant temp | °C |
+| Tesla - Engine Load | Calculated engine load | % |
+| Tesla - Throttle Position | Throttle pedal position | % |
+| Tesla - Battery Voltage | 12V battery voltage | V |
+| Tesla - Altitude | GPS altitude | m |
+| Tesla - GPS Speed | Speed from GPS | km/h |
+| Tesla - Heading | GPS heading/bearing | ° |
+| Tesla - GPS Accuracy | GPS fix quality | — |
+| Tesla - Device Temperature | OBDcast internal temp | °C |
+| Tesla - Acceleration | Accelerometer magnitude | m/s² |
 
 ### Binary Sensors
 
-| Entity | Description |
-|--------|-------------|
-| Ignition | Vehicle ignition state (on when battery > 13V) |
+| Entity (example: Tesla) | Description |
+|-------------------------|-------------|
+| Tesla - Ignition | Vehicle ignition state (on when battery > 13V) |
 
 ### Device Tracker
 
-| Entity | Description |
-|--------|-------------|
-| Vehicle Location | GPS location, displayed on HA map |
+| Entity (example: Tesla) | Description |
+|-------------------------|-------------|
+| Tesla | GPS location, displayed on HA map |
+
+## Multiple Vehicles
+
+Multiple OBDcast devices are fully supported. Each device is set up as a separate integration entry with its own vehicle name. HA's device registry handles them as distinct devices — no extra configuration or workarounds needed. Add another OBDcast device the same way you added the first.
 
 ## OBDcast Firmware
 

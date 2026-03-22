@@ -151,46 +151,59 @@ https://{ha_external_url}/api/webhook/{webhook_id}
 
 ### Device Registration
 
-Each OBDcast unit creates a single HA device entry:
+Each OBDcast unit creates a single HA device entry. The device name is the vehicle name provided during setup:
 
 ```yaml
 device:
   identifiers: ["obdcast_{device_id}"]
-  name: "OBDcast {vehicle_name}"
+  name: "{vehicle_name}"
   manufacturer: "Freematics"
   model: "ONE+ Model B"
   sw_version: "{firmware_version}"
 ```
 
+**Multi-vehicle support works out of the box.** Each OBDcast unit is set up as a separate config entry with its own vehicle name. HA's device registry tracks them as distinct devices with no conflicts — no extra configuration needed.
+
+### Entity Naming
+
+All entity friendly names are prefixed with the vehicle name provided during setup:
+
+- Friendly name pattern: `{vehicle_name} - {Sensor Name}` (e.g. `Tesla - Speed`, `Family Car - Fuel Level`)
+- Entity ID pattern: `sensor.{vehicle_name_slug}_{sensor_key}` (e.g. `sensor.tesla_speed`, `sensor.family_car_fuel_level`)
+
+The `vehicle_name` slug is derived by lowercasing and replacing spaces with underscores.
+
 ### Sensor Entities
 
-| Entity ID | Name | Unit | Device Class | State Class | Notes |
-|-----------|------|------|--------------|-------------|-------|
-| `sensor.obdcast_{id}_speed` | Speed | km/h | `speed` | `measurement` | OBD-II vehicle speed |
-| `sensor.obdcast_{id}_rpm` | RPM | rpm | — | `measurement` | Engine RPM |
-| `sensor.obdcast_{id}_fuel_level` | Fuel Level | % | — | `measurement` | Fuel tank level |
-| `sensor.obdcast_{id}_coolant_temp` | Coolant Temperature | °C | `temperature` | `measurement` | Engine coolant temp |
-| `sensor.obdcast_{id}_engine_load` | Engine Load | % | `power_factor` | `measurement` | Calculated engine load |
-| `sensor.obdcast_{id}_throttle_position` | Throttle Position | % | — | `measurement` | Throttle pedal position |
-| `sensor.obdcast_{id}_battery_voltage` | Battery Voltage | V | `voltage` | `measurement` | 12V battery voltage |
-| `sensor.obdcast_{id}_altitude` | Altitude | m | `distance` | `measurement` | GPS altitude |
-| `sensor.obdcast_{id}_gps_speed` | GPS Speed | km/h | `speed` | `measurement` | Speed from GPS |
-| `sensor.obdcast_{id}_heading` | Heading | ° | — | `measurement` | GPS heading/bearing |
-| `sensor.obdcast_{id}_gps_accuracy` | GPS Accuracy | — | — | — | Fix quality indicator |
-| `sensor.obdcast_{id}_device_temp` | Device Temperature | °C | `temperature` | `measurement` | OBDcast internal temp |
-| `sensor.obdcast_{id}_acceleration` | Acceleration | m/s² | — | `measurement` | Accelerometer magnitude |
+Example entity IDs and names shown for a vehicle named `Tesla`:
+
+| Entity ID | Friendly Name | Unit | Device Class | State Class | Notes |
+|-----------|---------------|------|--------------|-------------|-------|
+| `sensor.tesla_speed` | Tesla - Speed | km/h | `speed` | `measurement` | OBD-II vehicle speed |
+| `sensor.tesla_rpm` | Tesla - RPM | rpm | — | `measurement` | Engine RPM |
+| `sensor.tesla_fuel_level` | Tesla - Fuel Level | % | — | `measurement` | Fuel tank level |
+| `sensor.tesla_coolant_temp` | Tesla - Coolant Temperature | °C | `temperature` | `measurement` | Engine coolant temp |
+| `sensor.tesla_engine_load` | Tesla - Engine Load | % | `power_factor` | `measurement` | Calculated engine load |
+| `sensor.tesla_throttle_position` | Tesla - Throttle Position | % | — | `measurement` | Throttle pedal position |
+| `sensor.tesla_battery_voltage` | Tesla - Battery Voltage | V | `voltage` | `measurement` | 12V battery voltage |
+| `sensor.tesla_altitude` | Tesla - Altitude | m | `distance` | `measurement` | GPS altitude |
+| `sensor.tesla_gps_speed` | Tesla - GPS Speed | km/h | `speed` | `measurement` | Speed from GPS |
+| `sensor.tesla_heading` | Tesla - Heading | ° | — | `measurement` | GPS heading/bearing |
+| `sensor.tesla_gps_accuracy` | Tesla - GPS Accuracy | — | — | — | Fix quality indicator |
+| `sensor.tesla_device_temp` | Tesla - Device Temperature | °C | `temperature` | `measurement` | OBDcast internal temp |
+| `sensor.tesla_acceleration` | Tesla - Acceleration | m/s² | — | `measurement` | Accelerometer magnitude |
 
 ### Binary Sensor Entities
 
-| Entity ID | Name | Device Class | Notes |
-|-----------|------|--------------|-------|
-| `binary_sensor.obdcast_{id}_ignition` | Ignition | `running` | Derived from battery voltage threshold |
+| Entity ID | Friendly Name | Device Class | Notes |
+|-----------|---------------|--------------|-------|
+| `binary_sensor.tesla_ignition` | Tesla - Ignition | `running` | Derived from battery voltage threshold |
 
 ### Device Tracker Entity
 
-| Entity ID | Name | Source Type | Notes |
-|-----------|------|-------------|-------|
-| `device_tracker.obdcast_{id}` | Vehicle Location | `gps` | Lat/lon from GPS data, shows on HA map |
+| Entity ID | Friendly Name | Source Type | Notes |
+|-----------|---------------|-------------|-------|
+| `device_tracker.tesla` | Tesla | `gps` | Lat/lon from GPS data, shows on HA map |
 
 Device tracker attributes:
 - `latitude`
@@ -227,11 +240,11 @@ Device tracker attributes:
 │     MQTT Configuration               │
 ├──────────────────────────────────────┤
 │                                      │
+│  Vehicle Name: [________________]    │
+│  (e.g. "Tesla", "Family Car")        │
+│                                      │
 │  Device ID: [________________]       │
 │  (matches OBDcast firmware config)   │
-│                                      │
-│  Vehicle Name: [________________]    │
-│  (friendly name for HA)              │
 │                                      │
 │  MQTT Topic Prefix: [obdcast]        │
 │  (default: obdcast)                  │
@@ -246,11 +259,11 @@ Device tracker attributes:
 │     Webhook Configuration            │
 ├──────────────────────────────────────┤
 │                                      │
+│  Vehicle Name: [________________]    │
+│  (e.g. "Tesla", "Family Car")        │
+│                                      │
 │  Device ID: [________________]       │
 │  (matches OBDcast firmware config)   │
-│                                      │
-│  Vehicle Name: [________________]    │
-│  (friendly name for HA)              │
 │                                      │
 │  ──────────────────────────────────  │
 │  Your webhook URL:                   │
@@ -264,8 +277,8 @@ Device tracker attributes:
 
 ### Validation
 
+- **Vehicle Name**: Required, string — becomes the HA device name and prefixes all entity names
 - **Device ID**: Required, alphanumeric, must be unique across config entries
-- **Vehicle Name**: Required, used for entity friendly names
 - **MQTT Topic Prefix**: Optional, defaults to `obdcast`
 
 ### Options Flow
@@ -413,14 +426,6 @@ ha-obdcast/
 ---
 
 ## Future Considerations
-
-### Multiple Vehicles
-
-The current design supports multiple vehicles by:
-- Each OBDcast device has a unique `device_id`
-- Each device creates separate config entry
-- All entities are prefixed with device ID
-- No conflicts between vehicles
 
 ### Trip History / Statistics
 
