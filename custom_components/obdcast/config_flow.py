@@ -80,19 +80,25 @@ class OBDcastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vehicle_name = user_input[CONF_VEHICLE_NAME].strip()
             topic_prefix = user_input.get(CONF_MQTT_TOPIC_PREFIX, DEFAULT_MQTT_TOPIC_PREFIX).strip()
 
-            # Check unique device_id across entries
-            await self.async_set_unique_id(device_id)
-            self._abort_if_unique_id_configured()
+            if not device_id:
+                errors[CONF_DEVICE_ID] = "invalid_device_id"
+            if not vehicle_name:
+                errors[CONF_VEHICLE_NAME] = "invalid_vehicle_name"
 
-            return self.async_create_entry(
-                title=vehicle_name,
-                data={
-                    CONF_TRANSPORT: TRANSPORT_MQTT,
-                    CONF_VEHICLE_NAME: vehicle_name,
-                    CONF_DEVICE_ID: device_id,
-                    CONF_MQTT_TOPIC_PREFIX: topic_prefix,
-                },
-            )
+            if not errors:
+                # Check unique device_id across entries
+                await self.async_set_unique_id(device_id)
+                self._abort_if_unique_id_configured()
+
+                return self.async_create_entry(
+                    title=vehicle_name,
+                    data={
+                        CONF_TRANSPORT: TRANSPORT_MQTT,
+                        CONF_VEHICLE_NAME: vehicle_name,
+                        CONF_DEVICE_ID: device_id,
+                        CONF_MQTT_TOPIC_PREFIX: topic_prefix,
+                    },
+                )
 
         return self.async_show_form(
             step_id="mqtt",
@@ -110,26 +116,29 @@ class OBDcastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             device_id = user_input[CONF_DEVICE_ID].strip()
             vehicle_name = user_input[CONF_VEHICLE_NAME].strip()
 
-            await self.async_set_unique_id(device_id)
-            self._abort_if_unique_id_configured()
+            if not device_id:
+                errors[CONF_DEVICE_ID] = "invalid_device_id"
+            if not vehicle_name:
+                errors[CONF_VEHICLE_NAME] = "invalid_vehicle_name"
 
-            webhook_id = f"obdcast_{secrets.token_hex(16)}"
+            if not errors:
+                await self.async_set_unique_id(device_id)
+                self._abort_if_unique_id_configured()
 
-            return self.async_create_entry(
-                title=vehicle_name,
-                data={
-                    CONF_TRANSPORT: TRANSPORT_WEBHOOK,
-                    CONF_VEHICLE_NAME: vehicle_name,
-                    CONF_DEVICE_ID: device_id,
-                    CONF_WEBHOOK_ID: webhook_id,
-                },
-            )
+                webhook_id = f"obdcast_{secrets.token_hex(16)}"
+
+                return self.async_create_entry(
+                    title=vehicle_name,
+                    data={
+                        CONF_TRANSPORT: TRANSPORT_WEBHOOK,
+                        CONF_VEHICLE_NAME: vehicle_name,
+                        CONF_DEVICE_ID: device_id,
+                        CONF_WEBHOOK_ID: webhook_id,
+                    },
+                )
 
         return self.async_show_form(
             step_id="webhook",
             data_schema=STEP_WEBHOOK_SCHEMA,
             errors=errors,
-            description_placeholders={
-                "webhook_info": "A unique webhook URL will be generated after setup."
-            },
         )

@@ -36,7 +36,9 @@
       }
     },
     "error": {
-      "already_configured": "This device ID is already configured."
+      "already_configured": "This device ID is already configured.",
+      "invalid_device_id": "Device ID cannot be empty.",
+      "invalid_vehicle_name": "Vehicle name cannot be empty."
     },
     "abort": {
       "already_configured": "This device is already configured."

@@ -60,22 +60,26 @@ class OBDcastCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def get_value(self, key_path: str) -> Any:
         """Get a value from coordinator data using dot-notation key path.
 
+        Correctly distinguishes between a missing key (returns None) and a key
+        explicitly set to null/None in the payload (also returns None, but
+        without conflating the two cases by checking `is None` on `.get()`).
+
         Args:
             key_path: Dot-separated path, e.g. "obd.speed" or "signal_dbm"
 
         Returns:
             The value at that path, or None if not found.
         """
-        if not self.data:
+        if self.data is None:
             return None
         parts = key_path.split(".")
         current: Any = self.data
         for part in parts:
             if not isinstance(current, dict):
                 return None
-            current = current.get(part)
-            if current is None:
+            if part not in current:
                 return None
+            current = current[part]
         return current
 
     @property

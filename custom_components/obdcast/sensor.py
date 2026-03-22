@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.sensor import (
+    SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
 )
@@ -72,19 +73,19 @@ class OBDcastSensor(CoordinatorEntity[OBDcastCoordinator], SensorEntity):
         self._attr_icon = icon
 
         if device_class:
-            self._attr_device_class = device_class
+            try:
+                self._attr_device_class = SensorDeviceClass(device_class)
+            except ValueError:
+                pass
         if state_class:
             try:
                 self._attr_state_class = SensorStateClass(state_class)
             except ValueError:
                 self._attr_state_class = SensorStateClass.MEASUREMENT
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info for device registry."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._vehicle_name,
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=vehicle_name,
             manufacturer="Freematics",
             model="ONE+ Model B",
         )

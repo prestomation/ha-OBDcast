@@ -1,6 +1,8 @@
 """Constants for the OBDcast integration."""
 from __future__ import annotations
 
+from homeassistant.const import Platform
+
 DOMAIN = "obdcast"
 
 # Configuration keys
@@ -19,7 +21,7 @@ DEFAULT_MQTT_TOPIC_PREFIX = "obdcast"
 IGNITION_VOLTAGE_THRESHOLD = 13.0  # Volts - above this = ignition ON
 
 # Platforms
-PLATFORMS = ["sensor", "binary_sensor", "device_tracker"]
+PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR, Platform.DEVICE_TRACKER]
 
 # Sensor definitions: (key, name, unit, device_class, state_class, icon)
 SENSOR_DEFINITIONS = [
@@ -38,6 +40,6 @@ SENSOR_DEFINITIONS = [
 
 # Binary sensor definitions: (key, name, device_class, icon)
 BINARY_SENSOR_DEFINITIONS = [
-    ("ignition", "Ignition", "power", "mdi:key"),
+    ("ignition", "Ignition", "running", "mdi:key"),
     ("gps.fix", "GPS Fix", None, "mdi:crosshairs-gps"),
 ]

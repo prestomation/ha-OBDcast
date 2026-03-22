@@ -46,6 +46,12 @@ class OBDcastDeviceTracker(CoordinatorEntity[OBDcastCoordinator], TrackerEntity)
         self._vehicle_name = vehicle_name
         self._attr_unique_id = f"{device_id}_tracker"
         self._attr_name = vehicle_name
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=vehicle_name,
+            manufacturer="Freematics",
+            model="ONE+ Model B",
+        )
 
     @property
     def source_type(self) -> SourceType:
@@ -95,18 +101,4 @@ class OBDcastDeviceTracker(CoordinatorEntity[OBDcastCoordinator], TrackerEntity)
         if speed is not None:
             attrs["speed"] = speed
 
-        hdop = coord.get_value("gps.hdop")
-        if hdop is not None:
-            attrs["gps_accuracy"] = self.location_accuracy
-
         return attrs
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info for device registry."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._vehicle_name,
-            manufacturer="Freematics",
-            model="ONE+ Model B",
-        )

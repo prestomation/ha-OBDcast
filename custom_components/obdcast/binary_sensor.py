@@ -16,6 +16,7 @@ from .const import (
     CONF_DEVICE_ID,
     CONF_VEHICLE_NAME,
     DOMAIN,
+    IGNITION_VOLTAGE_THRESHOLD,
 )
 from .coordinator import OBDcastCoordinator
 
@@ -68,14 +69,14 @@ class OBDcastBinarySensor(CoordinatorEntity[OBDcastCoordinator], BinarySensorEnt
         self._attr_icon = icon
 
         if device_class:
-            self._attr_device_class = device_class
+            try:
+                self._attr_device_class = BinarySensorDeviceClass(device_class)
+            except ValueError:
+                pass
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device info for device registry."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._device_id)},
-            name=self._vehicle_name,
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, device_id)},
+            name=vehicle_name,
             manufacturer="Freematics",
             model="ONE+ Model B",
         )
@@ -84,6 +85,14 @@ class OBDcastBinarySensor(CoordinatorEntity[OBDcastCoordinator], BinarySensorEnt
     def is_on(self) -> bool | None:
         """Return True/False based on key value in coordinator data."""
         value = self.coordinator.get_value(self._key_path)
-        if value is None:
-            return None
-        return bool(value)
+        if value is not None:
+            return bool(value)
+        # Fallback: derive ignition from battery voltage if ignition key is absent
+        if self._key_path == "ignition":
+            voltage = self.coordinator.get_value("obd.voltage")
+            if voltage is not None:
+                try:
+                    return float(voltage) >= IGNITION_VOLTAGE_THRESHOLD
+                except (TypeError, ValueError):
+                    return None
+        return None
